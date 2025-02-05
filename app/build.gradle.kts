@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "io.github.hathibelagal.eidetic"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "io.github.hathibelagal.eidetic"

@@ -16,7 +16,6 @@
 package io.github.hathibelagal.eidetic;
 
 import android.app.Activity;
-import android.content.Context;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;

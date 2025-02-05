@@ -19,7 +19,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Point;
-import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.view.Menu;
