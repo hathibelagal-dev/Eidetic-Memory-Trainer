@@ -19,6 +19,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Point;
+import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.view.Menu;
@@ -49,12 +50,11 @@ public class MainActivity extends AppCompatActivity {
     private static final int WIN = 1;
     private static final int LOSE = 0;
     private final int MAX_VALUE = 9;
-    private final int MAX_VOLUME = 90;
     private final int nRows = 6;
     private final int nCols = 3;
     private final ArrayList<Button> buttons = new ArrayList<>(9);
     private final List<Integer> sequence = IntStream.range(1, 10).boxed().collect(Collectors.toList());
-    private final ToneGenerator toneGenerator = new ToneGenerator(ToneGenerator.TONE_DTMF_0, MAX_VOLUME);
+
     private boolean gameStarted = false;
     private int expectedNumber = 1;
     private GridLayout grid;
@@ -135,9 +135,7 @@ public class MainActivity extends AppCompatActivity {
                     b.setOnTouchListener((view, motionEvent) -> {
                         if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                             if (!gameStarted && b.getValue() != expectedNumber) {
-                                if (data.areSoundsOn()) {
-                                    toneGenerator.startTone(ToneGenerator.TONE_DTMF_0, 30);
-                                }
+                                speaker.playErrorTone();
                                 Toast.makeText(MainActivity.this, "Please start with 1", Toast.LENGTH_SHORT).show();
                                 return true;
                             }
@@ -149,15 +147,15 @@ public class MainActivity extends AppCompatActivity {
                                     MainActivity.this.activatePuzzleMode();
                                 }
                                 expectedNumber += 1;
-                                MainActivity.this.playTone(b.getValue(), false);
+                                speaker.playTone(b.getValue(), false);
                                 b.setVisibility(View.INVISIBLE);
 
                                 if (expectedNumber == MAX_VALUE + 1) {
-                                    MainActivity.this.playTone(ToneGenerator.TONE_DTMF_A, true);
+                                    speaker.playTone(ToneGenerator.TONE_DTMF_A, true);
                                     MainActivity.this.showRestart(WIN);
                                 }
                             } else {
-                                MainActivity.this.playTone(ToneGenerator.TONE_DTMF_0, true);
+                                speaker.playTone(ToneGenerator.TONE_DTMF_0, true);
                                 if (data.getStarsAvailable() > 0) {
                                     data.decrementStarsAvailable();
                                     invalidateOptionsMenu();
@@ -183,13 +181,6 @@ public class MainActivity extends AppCompatActivity {
         return LangUtils.getTranslation(data.getLanguage(), i);
     }
 
-    private void playTone(int tone, boolean isLong) {
-        if (!data.areSoundsOn()) {
-            return;
-        }
-        toneGenerator.stopTone();
-        toneGenerator.startTone(tone, isLong ? 200 : 100);
-    }
 
     private void showRestart(int status) {
         gridContainer.setBackgroundColor(getColor(status == WIN ? R.color.win : R.color.lose));
