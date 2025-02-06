@@ -20,9 +20,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Point;
 import android.media.ToneGenerator;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -51,12 +49,11 @@ public class MainActivity extends AppCompatActivity {
     private static final int WIN = 1;
     private static final int LOSE = 0;
     private final int MAX_VALUE = 9;
-    private final int MAX_VOLUME = 90;
     private final int nRows = 6;
     private final int nCols = 3;
     private final ArrayList<Button> buttons = new ArrayList<>(9);
     private final List<Integer> sequence = IntStream.range(1, 10).boxed().collect(Collectors.toList());
-    private final ToneGenerator toneGenerator = new ToneGenerator(ToneGenerator.TONE_DTMF_0, MAX_VOLUME);
+
     private boolean gameStarted = false;
     private int expectedNumber = 1;
     private GridLayout grid;
@@ -137,9 +134,7 @@ public class MainActivity extends AppCompatActivity {
                     b.setOnTouchListener((view, motionEvent) -> {
                         if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                             if (!gameStarted && b.getValue() != expectedNumber) {
-                                if (data.areSoundsOn()) {
-                                    toneGenerator.startTone(ToneGenerator.TONE_DTMF_0, 30);
-                                }
+                                speaker.playErrorTone();
                                 Toast.makeText(MainActivity.this, "Please start with 1", Toast.LENGTH_SHORT).show();
                                 return true;
                             }
@@ -151,15 +146,15 @@ public class MainActivity extends AppCompatActivity {
                                     MainActivity.this.activatePuzzleMode();
                                 }
                                 expectedNumber += 1;
-                                MainActivity.this.playTone(b.getValue(), false);
+                                speaker.playTone(b.getValue(), false);
                                 b.setVisibility(View.INVISIBLE);
 
                                 if (expectedNumber == MAX_VALUE + 1) {
-                                    MainActivity.this.playTone(ToneGenerator.TONE_DTMF_A, true);
+                                    speaker.playTone(ToneGenerator.TONE_DTMF_A, true);
                                     MainActivity.this.showRestart(WIN);
                                 }
                             } else {
-                                MainActivity.this.playTone(ToneGenerator.TONE_DTMF_0, true);
+                                speaker.playTone(ToneGenerator.TONE_DTMF_0, true);
                                 if (data.getStarsAvailable() > 0) {
                                     data.decrementStarsAvailable();
                                     invalidateOptionsMenu();
@@ -185,20 +180,9 @@ public class MainActivity extends AppCompatActivity {
         return LangUtils.getTranslation(data.getLanguage(), i);
     }
 
-    private void playTone(int tone, boolean isLong) {
-        if (!data.areSoundsOn()) {
-            return;
-        }
-        toneGenerator.stopTone();
-        toneGenerator.startTone(tone, isLong ? 200 : 100);
-    }
 
     private void showRestart(int status) {
-        if (status == WIN) {
-            gridContainer.setBackgroundColor(getColor(R.color.win));
-        } else {
-            gridContainer.setBackgroundColor(getColor(R.color.lose));
-        }
+        gridContainer.setBackgroundColor(getColor(status == WIN ? R.color.win : R.color.lose));
         int timeTaken = (int) TimeUnit.MILLISECONDS.toSeconds(new Date().getTime() - startTime);
         boolean createdRecord = false;
         int previousRecord = data.getFastestTime();
@@ -208,9 +192,7 @@ public class MainActivity extends AppCompatActivity {
         if (status == WIN) {
             data.incrementStreak();
             createdRecord = data.updateFastestTime(timeTaken);
-
             updateAdditionalSpeech(createdRecord, timeTaken);
-
             builder.setNeutralButton("Speak 👄", null);
         }
 
@@ -233,22 +215,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void updateAdditionalSpeech(boolean createdRecord, int timeTaken) {
-        if(createdRecord) {
+        if (createdRecord) {
             additionalSpeech += getString(R.string.tts_new_record);
         }
-        if(data.getStreak() == 5) {
-            additionalSpeech += getString(R.string.tts_streak5);
+
+        int streak = data.getStreak();
+        switch (streak) {
+            case 5:
+                additionalSpeech += getString(R.string.tts_streak5);
+                break;
+            case 10:
+                additionalSpeech += getString(R.string.tts_streak10);
+                break;
+            case 25:
+                additionalSpeech += getString(R.string.tts_streak25);
+                break;
         }
-        if(data.getStreak() == 10) {
-            additionalSpeech += getString(R.string.tts_streak10);
-        }
-        if(data.getStreak() == 25) {
-            additionalSpeech += getString(R.string.tts_streak25);
-        }
-        if(timeTaken == 5) {
+
+        if (timeTaken == 5) {
             additionalSpeech += getString(R.string.tts_so_fast);
-        }
-        if(timeTaken < 5) {
+        } else if (timeTaken < 5) {
             additionalSpeech += getString(R.string.tts_super_fast);
         }
     }
@@ -263,14 +249,13 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.game_menu, menu);
         int nStars = data.getStarsAvailable();
-        if (nStars < 2) {
-            menu.findItem(R.id.menu_star_1).setVisible(false);
-        }
-        if (nStars < 1) {
-            menu.findItem(R.id.menu_star_2).setVisible(false);
-        }
+
+        menu.findItem(R.id.menu_star_1).setVisible(nStars >= 2);
+        menu.findItem(R.id.menu_star_2).setVisible(nStars >= 1);
+
         boolean sfx = data.areSoundsOn();
         menu.findItem(R.id.menu_sfx).setTitle(sfx ? getString(R.string.menu_sfx_off_title) : getString(R.string.menu_sfx_on_title));
+
         return super.onCreateOptionsMenu(menu);
     }
 

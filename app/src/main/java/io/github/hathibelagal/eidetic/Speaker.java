@@ -16,21 +16,22 @@
 package io.github.hathibelagal.eidetic;
 
 import android.app.Activity;
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.media.AudioManager;
+import android.media.ToneGenerator;
+import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
-import android.util.Log;
-import android.widget.Toast;
 
 import java.util.Locale;
-import java.util.Set;
 
 public class Speaker implements TextToSpeech.OnInitListener {
     private final TextToSpeech tts;
-    private boolean ttsReady = false;
     private final Activity context;
+    private final int MAX_VOLUME = 100;
+    private final ToneGenerator toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, MAX_VOLUME);
+    private final Bundle ttsParams = new Bundle();
+    private final SavedData data;
+    private boolean ttsReady = false;
 
-    private SavedData data;
     public Speaker(Activity context, SavedData data) {
         this.context = context;
         this.data = data;
@@ -39,8 +40,8 @@ public class Speaker implements TextToSpeech.OnInitListener {
 
     @Override
     public void onInit(int i) {
-        if(i == TextToSpeech.SUCCESS) {
-            if(tts.setLanguage(Locale.ENGLISH) == TextToSpeech.LANG_AVAILABLE) {
+        if (i == TextToSpeech.SUCCESS) {
+            if (tts.setLanguage(Locale.ENGLISH) == TextToSpeech.LANG_AVAILABLE) {
                 tts.setSpeechRate(1.2f);
                 ttsReady = true;
                 say(context.getString(R.string.tts_ready));
@@ -49,11 +50,28 @@ public class Speaker implements TextToSpeech.OnInitListener {
     }
 
     public void say(String s) {
-        if(!data.areSoundsOn()) {
+        if (!data.areSoundsOn()) {
             return;
         }
-        if(!ttsReady) { return; }
-        tts.speak(s, TextToSpeech.QUEUE_FLUSH, null, null);
+        if (!ttsReady) {
+            return;
+        }
+        tts.speak(s, TextToSpeech.QUEUE_FLUSH, ttsParams, null);
+    }
+
+    void playTone(int tone, boolean isLong) {
+        if (!data.areSoundsOn()) {
+            return;
+        }
+        toneGenerator.stopTone();
+        toneGenerator.startTone(tone, isLong ? 200 : 100);
+    }
+
+    void playErrorTone() {
+        if (!data.areSoundsOn()) {
+            return;
+        }
+        toneGenerator.startTone(ToneGenerator.TONE_DTMF_0, 30);
     }
 
     public void releaseResources() {
