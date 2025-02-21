@@ -64,7 +64,7 @@ public class Speaker implements TextToSpeech.OnInitListener {
             return;
         }
         toneGenerator.stopTone();
-        toneGenerator.startTone(tone, isLong ? 200 : 50);
+        toneGenerator.startTone(tone, isLong ? 200 : 75);
     }
 
     void playErrorTone() {
