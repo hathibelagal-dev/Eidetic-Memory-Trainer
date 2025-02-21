@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CustomDialogButton" parent="Widget.AppCompat.Button">
+        <item name="android:background">@drawable/dialog_button</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textColor">@color/white</item>
+    </style>
+</resources>

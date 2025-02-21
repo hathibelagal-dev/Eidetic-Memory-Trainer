@@ -18,7 +18,9 @@ package io.github.hathibelagal.eidetic;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.graphics.Color;
 import android.graphics.Point;
+import android.graphics.drawable.ColorDrawable;
 import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.view.Menu;
@@ -28,6 +30,7 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -40,11 +43,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     private static final int WIN = 1;
     private static final int LOSE = 0;
@@ -131,42 +135,7 @@ public class MainActivity extends AppCompatActivity {
                     gridParams.columnSpec = GridLayout.spec(j, 1f);
 
                     b.setLayoutParams(gridParams);
-                    b.setOnTouchListener((view, motionEvent) -> {
-                        if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                            if (!gameStarted && b.getValue() != expectedNumber) {
-                                speaker.playErrorTone();
-                                Toast.makeText(MainActivity.this, "Please start with 1", Toast.LENGTH_SHORT).show();
-                                return true;
-                            }
-
-                            if (b.getValue() == expectedNumber) {
-                                b.setOnTouchListener(null);
-                                if (!gameStarted) {
-                                    gameStarted = true;
-                                    MainActivity.this.activatePuzzleMode();
-                                }
-                                expectedNumber += 1;
-                                speaker.playTone(b.getValue(), false);
-                                b.setVisibility(View.INVISIBLE);
-
-                                if (expectedNumber == MAX_VALUE + 1) {
-                                    speaker.playTone(ToneGenerator.TONE_DTMF_A, true);
-                                    MainActivity.this.showRestart(WIN);
-                                }
-                            } else {
-                                speaker.playTone(ToneGenerator.TONE_DTMF_0, true);
-                                if (data.getStarsAvailable() > 0) {
-                                    data.decrementStarsAvailable();
-                                    invalidateOptionsMenu();
-                                } else {
-                                    data.resetStreak();
-                                    data.resetStars();
-                                    MainActivity.this.showRestart(LOSE);
-                                }
-                            }
-                        }
-                        return true;
-                    });
+                    b.setOnTouchListener(MainActivity.this);
                     buttons.add(b);
                     grid.addView(b);
 
@@ -187,31 +156,59 @@ public class MainActivity extends AppCompatActivity {
         int timeTaken = (int) TimeUnit.MILLISECONDS.toSeconds(new Date().getTime() - startTime);
         boolean createdRecord = false;
         int previousRecord = data.getFastestTime();
+
+        // Inflate custom layout
+        View dialogView = getLayoutInflater().inflate(R.layout.custom_dialog, null);
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
         builder.setCancelable(false);
 
+        // Get references to views
+        TextView titleView = dialogView.findViewById(R.id.dialog_title);
+        TextView messageView = dialogView.findViewById(R.id.dialog_message);
+        Button neutralButton = dialogView.findViewById(R.id.dialog_neutral_button);
+        Button positiveButton = dialogView.findViewById(R.id.dialog_positive_button);
+        Button negativeButton = dialogView.findViewById(R.id.dialog_negative_button);
+
+        // Set content
         if (status == WIN) {
             data.incrementStreak();
             createdRecord = data.updateFastestTime(timeTaken);
             updateAdditionalSpeech(createdRecord, timeTaken);
-            builder.setNeutralButton("Speak 👄", null);
+            neutralButton.setVisibility(View.VISIBLE);
         }
 
         data.updateStats(status == WIN);
 
-        builder.setMessage(status == WIN ? String.format(Locale.ENGLISH, getString(createdRecord ? R.string.success_message_record : R.string.success_message), timeTaken, previousRecord) : getString(R.string.game_over_message));
-        builder.setTitle(status == WIN ? String.format(Locale.ENGLISH, "🤩 You win!\n🙌 Streak: %d", data.getStreak()) : "😖 Game over!");
-        builder.setPositiveButton("Yes", (dialogInterface, i) -> resetGrid());
-        builder.setNegativeButton("No", (dialogInterface, i) -> finish());
+        titleView.setText(status == WIN ?
+                String.format(Locale.ENGLISH, "🤩 You win!\n🙌 Streak: %d", data.getStreak()) :
+                "😖 Game over!");
+        messageView.setText(status == WIN ?
+                String.format(Locale.ENGLISH, getString(createdRecord ? R.string.success_message_record :
+                        R.string.success_message), timeTaken, previousRecord) :
+                getString(R.string.game_over_message));
 
         AlertDialog dialog = builder.create();
-        dialog.setOnShowListener(dialogInterface -> {
-            Button info = dialog.getButton(AlertDialog.BUTTON_NEUTRAL);
-            if (!data.areSoundsOn()) {
-                info.setEnabled(false);
-            }
-            info.setOnClickListener(view -> speaker.say(String.format(Locale.ENGLISH, getString(R.string.tts_time_taken), timeTaken) + ". " + additionalSpeech));
+        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+
+        positiveButton.setOnClickListener(v -> {
+            dialog.dismiss();
+            resetGrid();
         });
+        negativeButton.setOnClickListener(v -> {
+            dialog.dismiss();
+            finish();
+        });
+
+        if (status == WIN) {
+            if (!data.areSoundsOn()) {
+                neutralButton.setEnabled(false);
+            }
+            neutralButton.setOnClickListener(v ->
+                    speaker.say(String.format(Locale.ENGLISH, getString(R.string.tts_time_taken), timeTaken) +
+                            ". " + additionalSpeech));
+        }
+
         dialog.show();
     }
 
@@ -289,26 +286,42 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-        builder.create().show();
+        AlertDialog dialog = builder.create();
+        dialog.show();
     }
 
     private void showStatsDialog() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-        builder.setTitle("Your stats");
-        builder.setPositiveButton("Close", null);
+        View dialogView = getLayoutInflater().inflate(R.layout.custom_dialog, null);
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setView(dialogView);
+
+        TextView titleView = dialogView.findViewById(R.id.dialog_title);
+        TextView messageView = dialogView.findViewById(R.id.dialog_message);
+        Button positiveButton = dialogView.findViewById(R.id.dialog_positive_button);
+        Button negativeButton = dialogView.findViewById(R.id.dialog_negative_button);
+        Button neutralButton = dialogView.findViewById(R.id.dialog_neutral_button);
+
+        titleView.setText(R.string.your_stats);
+        positiveButton.setText(R.string.close);
+        negativeButton.setVisibility(View.GONE);
+        neutralButton.setVisibility(View.GONE);
+
         Map<String, Integer> stats = data.getStats();
-        List<CharSequence> statItems = new ArrayList<>();
         Integer nGames = stats.get("N_GAMES");
         Integer nWins = stats.get("N_WON");
         if (nGames == null || nWins == null) {
             return;
         }
         Float winRate = (float) (100.0 * nWins / nGames);
-        statItems.add(String.format(Locale.ENGLISH, "Total games played: %d", nGames));
-        statItems.add(String.format(Locale.ENGLISH, "Number of wins: %d", nWins));
-        statItems.add(String.format(Locale.ENGLISH, "Win rate: %.2f %%", winRate));
-        builder.setItems(statItems.toArray(new CharSequence[0]), null);
-        builder.create().show();
+        String statsText = String.format(Locale.ENGLISH,
+                "Total games played: %d\nNumber of wins: %d\nWin rate: %.2f %%",
+                nGames, nWins, winRate);
+        messageView.setText(statsText);
+
+        AlertDialog dialog = builder.create();
+        Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        positiveButton.setOnClickListener(v -> dialog.dismiss());
+        dialog.show();
     }
 
     @Override
@@ -325,5 +338,51 @@ public class MainActivity extends AppCompatActivity {
             speaker.releaseResources();
         }
         super.onDestroy();
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        NumberButton b = (NumberButton) view;
+        int value = b.getValue();
+        if (motionEvent.getAction() != MotionEvent.ACTION_DOWN) {
+            return true;
+        }
+        if (!gameStarted && value != expectedNumber) {
+            speaker.playErrorTone();
+            Toast.makeText(MainActivity.this, "Please start with 1", Toast.LENGTH_SHORT).show();
+            return true;
+        }
+
+        if (value == expectedNumber) {
+            b.setOnTouchListener(null);
+            if (!gameStarted) {
+                gameStarted = true;
+                MainActivity.this.activatePuzzleMode();
+            }
+            expectedNumber += 1;
+            speaker.playTone(b.getValue(), false);
+
+            b.setScaleX(0.90f);
+            b.setScaleY(0.90f);
+            b.setAlpha(0f);
+            b.setVisibility(View.INVISIBLE);
+
+            if (expectedNumber == MAX_VALUE + 1) {
+                speaker.playTone(ToneGenerator.TONE_DTMF_A, true);
+                MainActivity.this.showRestart(WIN);
+            }
+        } else {
+            speaker.playTone(ToneGenerator.TONE_DTMF_0, true);
+            if (data.getStarsAvailable() > 0) {
+                data.decrementStarsAvailable();
+                invalidateOptionsMenu();
+            } else {
+                data.resetStreak();
+                data.resetStars();
+                MainActivity.this.showRestart(LOSE);
+            }
+        }
+        return true;
     }
 }
