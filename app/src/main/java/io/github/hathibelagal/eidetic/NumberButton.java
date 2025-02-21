@@ -40,9 +40,14 @@ public class NumberButton extends androidx.appcompat.widget.AppCompatButton {
 
     public NumberButton(Context context) {
         super(context);
-        setTextSize(60f);
+        setTextSize(55f);
         setTextColor(Color.WHITE);
         setBackground(AppCompatResources.getDrawable(context, R.drawable.number_button_ready));
+
+        setElevation(4f);
+        setStateListAnimator(null);
+
+        setShadowLayer(2f, 1f, 1f, Color.argb(128, 0, 0, 0));
     }
 
     public NumberButton(Context context, AttributeSet attrs) {

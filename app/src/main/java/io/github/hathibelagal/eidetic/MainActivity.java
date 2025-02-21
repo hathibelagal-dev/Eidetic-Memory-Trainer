@@ -85,7 +85,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void resetGrid() {
         invalidateOptionsMenu();
-        gridContainer.setBackgroundColor(getColor(R.color.game));
+        gridContainer.setBackgroundResource(R.drawable.game_background);
         startTime = new Date().getTime();
         grid.removeAllViews();
         buttons.clear();
@@ -182,7 +182,8 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void showRestart(int status) {
-        gridContainer.setBackgroundColor(getColor(status == WIN ? R.color.win : R.color.lose));
+        gridContainer.setBackgroundResource(status == WIN ?
+                R.drawable.win_background : R.drawable.lose_background);
         int timeTaken = (int) TimeUnit.MILLISECONDS.toSeconds(new Date().getTime() - startTime);
         boolean createdRecord = false;
         int previousRecord = data.getFastestTime();

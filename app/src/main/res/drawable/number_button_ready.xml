@@ -1,16 +1,56 @@
 <?xml version="1.0" encoding="utf-8"?>
 <selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Normal state -->
     <item android:state_pressed="false">
-        <shape android:shape="rectangle">
-            <solid android:color="#3C78A4"/>
-            <corners android:radius="16dp"/>
-            <stroke android:width="4dp" android:color="#5AA1E6"/>
-        </shape>
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <corners android:radius="16dp"/>
+                    <gradient
+                        android:startColor="#20000000"
+                        android:endColor="#00000000"
+                        android:angle="270"/>
+                </shape>
+            </item>
+            <!-- Main button background -->
+            <item android:bottom="4dp">
+                <shape android:shape="rectangle">
+                    <gradient
+                        android:startColor="#5AA1E6"
+                        android:endColor="#3C78A4"
+                        android:angle="270"/>
+                    <corners android:radius="16dp"/>
+                    <stroke
+                        android:width="2dp"
+                        android:color="#80FFFFFF"/>
+                </shape>
+            </item>
+        </layer-list>
     </item>
+
     <item android:state_pressed="true">
-        <shape android:shape="rectangle">
-            <solid android:color="#F5A623"/>
-            <corners android:radius="8dp"/>
-        </shape>
+        <layer-list>
+            <item>
+                <shape android:shape="rectangle">
+                    <corners android:radius="12dp"/>
+                    <gradient
+                        android:startColor="#30000000"
+                        android:endColor="#00000000"
+                        android:angle="270"/>
+                </shape>
+            </item>
+            <item android:bottom="2dp">
+                <shape android:shape="rectangle">
+                    <gradient
+                        android:startColor="#F5A623"
+                        android:endColor="#D88C1F"
+                        android:angle="270"/>
+                    <corners android:radius="12dp"/>
+                    <stroke
+                        android:width="2dp"
+                        android:color="#80FFFFFF"/>
+                </shape>
+            </item>
+        </layer-list>
     </item>
 </selector>
