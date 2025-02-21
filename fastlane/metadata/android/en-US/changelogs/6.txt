@@ -1,3 +1,1 @@
-- Several optimizations
-- Slightly better graphics
-- Improved sound control
+- Version bump
