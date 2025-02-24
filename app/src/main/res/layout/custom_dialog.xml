@@ -45,17 +45,6 @@
             tools:ignore="ButtonStyle" />
 
         <Button
-            android:id="@+id/dialog_positive_button"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/yes"
-            android:textColor="@color/white"
-            style="@style/CustomDialogButton"
-            android:layout_margin="4dp"
-            tools:ignore="ButtonStyle" />
-
-        <Button
             android:id="@+id/dialog_negative_button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -65,6 +54,17 @@
             style="@style/CustomDialogButton"
             android:layout_margin="4dp"
             tools:ignore="ButtonStyle"/>
+
+        <Button
+            android:id="@+id/dialog_positive_button"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/yes"
+            android:textColor="@color/white"
+            style="@style/CustomDialogButton"
+            android:layout_margin="4dp"
+            tools:ignore="ButtonStyle" />
 
     </LinearLayout>
 </LinearLayout>

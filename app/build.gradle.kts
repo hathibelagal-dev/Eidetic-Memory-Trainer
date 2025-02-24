@@ -9,9 +9,9 @@ android {
     defaultConfig {
         applicationId = "io.github.hathibelagal.eidetic"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 7
-        versionName = "1.3.2"
+        targetSdk = 35
+        versionCode = 8
+        versionName = "1.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -26,8 +26,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_1_9
+        targetCompatibility = JavaVersion.VERSION_1_9
     }
 }
 

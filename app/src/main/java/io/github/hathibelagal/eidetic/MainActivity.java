@@ -252,17 +252,23 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         menu.findItem(R.id.menu_star_2).setVisible(nStars >= 1);
 
         boolean sfx = data.areSoundsOn();
+        boolean hardMode = data.isHardModeOn();
         menu.findItem(R.id.menu_sfx).setTitle(sfx ? getString(R.string.menu_sfx_off_title) : getString(R.string.menu_sfx_on_title));
+        menu.findItem(R.id.menu_difficulty).setTitle(!hardMode ? getString(R.string.hard_mode) : getString(R.string.easy_mode));
 
         return super.onCreateOptionsMenu(menu);
+    }
+
+    private void reloadGame() {
+        data.resetStreak();
+        data.resetStars();
+        resetGrid();
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         if (item.getItemId() == R.id.menu_reload) {
-            data.resetStreak();
-            data.resetStars();
-            resetGrid();
+            reloadGame();
         } else if (item.getItemId() == R.id.menu_language) {
             showChangeLanguageDialog();
         } else if (item.getItemId() == R.id.menu_stats) {
@@ -270,6 +276,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         } else if (item.getItemId() == R.id.menu_sfx) {
             data.toggleSounds();
             invalidateOptionsMenu();
+        } else if (item.getItemId() == R.id.menu_difficulty) {
+            data.toggleDifficulty();
+            invalidateOptionsMenu();
+            reloadGame();
+            Toast.makeText(MainActivity.this, data.isHardModeOn() ? "HARD MODE" : "EASY MODE", Toast.LENGTH_SHORT).show();
         }
         return super.onOptionsItemSelected(item);
     }

@@ -46,6 +46,14 @@ public class SavedData {
         prefs.edit().putBoolean("SFX", !areSoundsOn()).commit();
     }
 
+    boolean isHardModeOn() {
+        return prefs.getBoolean("HARD_MODE", false);
+    }
+
+    void toggleDifficulty() {
+        prefs.edit().putBoolean("HARD_MODE", !isHardModeOn()).apply();
+    }
+
     void updateStats(boolean won) {
         int nGames = prefs.getInt("N_GAMES", 0) + 1;
         SharedPreferences.Editor editor = prefs.edit();
@@ -99,7 +107,11 @@ public class SavedData {
 
     @SuppressLint("ApplySharedPref")
     void resetStars() {
-        prefs.edit().putInt("STARS", MAX_STARS).commit();
+        if(isHardModeOn()) {
+            prefs.edit().putInt("STARS", 0).commit();
+        } else {
+            prefs.edit().putInt("STARS", MAX_STARS).commit();
+        }
     }
 
     @SuppressLint("ApplySharedPref")

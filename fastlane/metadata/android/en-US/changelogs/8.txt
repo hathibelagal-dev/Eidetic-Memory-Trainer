@@ -1,0 +1,3 @@
+- Fix Yes/No button positions
+- Two difficulty levels (Easy and Hard)
+- Code optimizations

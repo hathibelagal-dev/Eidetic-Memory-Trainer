@@ -23,4 +23,6 @@
     <string name="speak">Speak</string>
     <string name="yes">Yes</string>
     <string name="no">No</string>
+    <string name="hard_mode">Turn hard mode on</string>
+    <string name="easy_mode">Turn hard mode off</string>
 </resources>
