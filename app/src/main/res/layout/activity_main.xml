@@ -7,15 +7,17 @@
     android:orientation="vertical"
     android:background="@drawable/game_background"
     android:id="@+id/grid_container"
-    android:padding="16dp">
+    android:fitsSystemWindows="true"
+    >
 
     <GridLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:id="@+id/grid"
         android:rowCount="6"
         android:columnCount="3"
-        android:useDefaultMargins="true"
+        android:useDefaultMargins="false"
         android:alpha="0.8"
         />
 
