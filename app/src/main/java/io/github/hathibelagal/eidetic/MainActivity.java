@@ -133,8 +133,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     gridParams.width = 0;
                     gridParams.rowSpec = GridLayout.spec(i, 1f);
                     gridParams.columnSpec = GridLayout.spec(j, 1f);
+                    gridParams.setMargins(4, 0, 4, 0);
 
                     b.setLayoutParams(gridParams);
+                    b.setPadding(0, 0, 0, 0);
                     b.setOnTouchListener(MainActivity.this);
                     buttons.add(b);
                     grid.addView(b);
