@@ -27,6 +27,9 @@ public class LangUtils {
         languageMap.put(1, new String[]{"०", "१", "२", "३", "४", "५", "६", "७", "८", "९"});
         languageMap.put(2, new String[]{"零", "一", "二", "三", "四", "五", "六", "七", "八", "九"});
         languageMap.put(3, new String[]{"០", "១", "២", "៣", "៤", "៥", "៦", "៧", "៨", "៩"});
+        languageMap.put(4, new String[]{"零", "壹", "貳", "參", "肆", "伍", "陸", "柒", "捌", "玖"});
+        languageMap.put(5, new String[]{"공", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구"});
+        languageMap.put(6, new String[]{"", "Ⰰ", "Ⰱ", "Ⰲ", "Ⰳ", "Ⰴ", "Ⰵ", "Ⰶ", "Ⰷ", "Ⰸ"});
     }
 
     public static String getTranslation(int language, int i) {

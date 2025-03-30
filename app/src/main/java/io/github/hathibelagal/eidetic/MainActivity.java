@@ -290,7 +290,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private void showChangeLanguageDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
         builder.setTitle("Change language to...");
-        builder.setItems(new CharSequence[]{"English", "Hindi", "Japanese", "Khmer"}, (dialogInterface, i) -> {
+        builder.setItems(new CharSequence[]{"English", "Hindi", "Japanese", "Khmer", "Formal Chinese", "Korean", "Old Church Slavonic"}, (dialogInterface, i) -> {
             data.setLanguage(i);
             if (!gameStarted) {
                 for (Button b : buttons) {
