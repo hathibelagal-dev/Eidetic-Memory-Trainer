@@ -23,6 +23,7 @@ import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.media.ToneGenerator;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -36,6 +37,8 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,6 +65,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private int expectedNumber = 1;
     private GridLayout grid;
     private View gridContainer;
+    private LinearProgressIndicator progressBar;
 
     private long startTime = 0;
 
@@ -70,6 +74,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private Speaker speaker;
 
     private String additionalSpeech;
+
+    private CountDownTimer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,10 +87,30 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         data = new SavedData(this);
         grid = findViewById(R.id.grid);
         gridContainer = findViewById(R.id.grid_container);
+        progressBar = findViewById(R.id.progress_bar);
 
         speaker = new Speaker(this, data);
 
         resetGrid();
+    }
+
+    private void startProgressTimer() {
+        timer = new CountDownTimer(60000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                long progress = millisUntilFinished / 1000;
+                progressBar.setProgress((int) progress);
+                if (progress <= 0) {
+                    showRestart(LOSE);
+                    cancel();
+                }
+            }
+
+            @Override
+            public void onFinish() {
+                showRestart(LOSE);
+            }
+        }.start();
     }
 
     private void resetGrid() {
@@ -98,10 +124,22 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         expectedNumber = 1;
         gameStarted = false;
         additionalSpeech = "";
+        progressBar.setProgress(60);
+        startProgressTimer();
     }
 
     private void generateSequence() {
         Collections.shuffle(sequence);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -153,8 +191,15 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     private void showRestart(int status) {
-        gridContainer.setBackgroundResource(status == WIN ?
-                R.drawable.win_background : R.drawable.lose_background);
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
+        if (status == LOSE) {
+            data.resetStreak();
+            data.resetStars();
+        }
+        gridContainer.setBackgroundResource(status == WIN ? R.drawable.win_background : R.drawable.lose_background);
         int timeTaken = (int) TimeUnit.MILLISECONDS.toSeconds(new Date().getTime() - startTime);
         boolean createdRecord = false;
         int previousRecord = data.getFastestTime();
@@ -182,13 +227,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         data.updateStats(status == WIN);
 
-        titleView.setText(status == WIN ?
-                String.format(Locale.ENGLISH, "🤩 You win!\n🙌 Streak: %d", data.getStreak()) :
-                "😖 Game over!");
-        messageView.setText(status == WIN ?
-                String.format(Locale.ENGLISH, getString(createdRecord ? R.string.success_message_record :
-                        R.string.success_message), timeTaken, previousRecord) :
-                getString(R.string.game_over_message));
+        titleView.setText(status == WIN ? String.format(Locale.ENGLISH, "🤩 You win!\n🙌 Streak: %d", data.getStreak()) : "😖 Game over!");
+        messageView.setText(status == WIN ? String.format(Locale.ENGLISH, getString(createdRecord ? R.string.success_message_record : R.string.success_message), timeTaken, previousRecord) : getString(R.string.game_over_message));
 
         AlertDialog dialog = builder.create();
         Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -206,9 +246,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if (!data.areSoundsOn()) {
                 neutralButton.setEnabled(false);
             }
-            neutralButton.setOnClickListener(v ->
-                    speaker.say(String.format(Locale.ENGLISH, getString(R.string.tts_time_taken), timeTaken) +
-                            ". " + additionalSpeech));
+            neutralButton.setOnClickListener(v -> speaker.say(String.format(Locale.ENGLISH, getString(R.string.tts_time_taken), timeTaken) + ". " + additionalSpeech));
         }
 
         dialog.show();
@@ -326,9 +364,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return;
         }
         Float winRate = (float) (100.0 * nWins / nGames);
-        String statsText = String.format(Locale.ENGLISH,
-                "Total games played: %d\nNumber of wins: %d\nWin rate: %.2f %%",
-                nGames, nWins, winRate);
+        String statsText = String.format(Locale.ENGLISH, "Total games played: %d\nNumber of wins: %d\nWin rate: %.2f %%", nGames, nWins, winRate);
         messageView.setText(statsText);
 
         AlertDialog dialog = builder.create();
@@ -349,6 +385,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onDestroy() {
         if (speaker != null) {
             speaker.releaseResources();
+        }
+        if (timer != null) {
+            timer.cancel();
         }
         super.onDestroy();
     }
@@ -391,11 +430,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 data.decrementStarsAvailable();
                 invalidateOptionsMenu();
             } else {
-                data.resetStreak();
-                data.resetStars();
                 MainActivity.this.showRestart(LOSE);
             }
         }
         return true;
     }
+
 }

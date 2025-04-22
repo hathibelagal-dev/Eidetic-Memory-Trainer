@@ -1,0 +1,2 @@
+- Heart regeneration. You now regain a lost heart every time you complete 5 attempts successfully.
+- There's now a maximum time limit of 1 minute.
