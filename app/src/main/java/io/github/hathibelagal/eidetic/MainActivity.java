@@ -24,7 +24,7 @@ import android.graphics.drawable.ColorDrawable;
 import android.media.ToneGenerator;
 import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.CountDownTimer;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -32,7 +32,6 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.GridLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -77,9 +76,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     private String additionalSpeech;
 
-    private boolean paused = false;
-    private boolean finished = false;
-    private boolean timedOut = false;
+    private CountDownTimer timer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,34 +93,25 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         speaker = new Speaker(this, data);
 
         resetGrid();
+    }
 
-        AsyncTask.execute(new Runnable() {
+    private void startProgressTimer() {
+        timer = new CountDownTimer(60000, 1000) {
             @Override
-            public void run() {
-                while (!finished) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if(paused || timedOut) {
-                                return;
-                            }
-                            if(progressBar.getProgress() > 0) {
-                                progressBar.setProgress(progressBar.getProgress() - 1);
-                            }
-                            if(progressBar.getProgress() == 0) {
-                                MainActivity.this.showRestart(LOSE);
-                                timedOut = true;
-                            }
-                        }
-                    });
+            public void onTick(long millisUntilFinished) {
+                long progress = millisUntilFinished / 1000;
+                progressBar.setProgress((int)progress);
+                if (progress <= 0) {
+                    showRestart(LOSE);
+                    cancel();
                 }
             }
-        });
+
+            @Override
+            public void onFinish() {
+                showRestart(LOSE);
+            }
+        }.start();
     }
 
     private void resetGrid() {
@@ -138,8 +126,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         gameStarted = false;
         additionalSpeech = "";
         progressBar.setProgress(60);
-        timedOut = false;
-        paused = false;
+        startProgressTimer();
     }
 
     private void generateSequence() {
@@ -149,13 +136,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onPause() {
         super.onPause();
-        paused = true;
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        paused = false;
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -207,6 +192,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     private void showRestart(int status) {
+        if(timer != null) {
+            timer.cancel();
+            timer = null;
+        }
         if(status == LOSE) {
             data.resetStreak();
             data.resetStars();
@@ -215,7 +204,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         int timeTaken = (int) TimeUnit.MILLISECONDS.toSeconds(new Date().getTime() - startTime);
         boolean createdRecord = false;
         int previousRecord = data.getFastestTime();
-        paused = true;
 
         // Inflate custom layout
         View dialogView = getLayoutInflater().inflate(R.layout.custom_dialog, null);
@@ -396,9 +384,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     protected void onDestroy() {
-        finished = true;
         if (speaker != null) {
             speaker.releaseResources();
+        }
+        if (timer != null) {
+            timer.cancel();
         }
         super.onDestroy();
     }
