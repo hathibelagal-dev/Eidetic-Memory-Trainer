@@ -22,7 +22,6 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.media.ToneGenerator;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.view.Menu;
@@ -100,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             @Override
             public void onTick(long millisUntilFinished) {
                 long progress = millisUntilFinished / 1000;
-                progressBar.setProgress((int)progress);
+                progressBar.setProgress((int) progress);
                 if (progress <= 0) {
                     showRestart(LOSE);
                     cancel();
@@ -192,11 +191,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     private void showRestart(int status) {
-        if(timer != null) {
+        if (timer != null) {
             timer.cancel();
             timer = null;
         }
-        if(status == LOSE) {
+        if (status == LOSE) {
             data.resetStreak();
             data.resetStars();
         }
