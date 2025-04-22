@@ -35,6 +35,9 @@ public class SavedData {
     void incrementStreak() {
         int currentStreak = prefs.getInt("STREAK", 0) + 1;
         prefs.edit().putInt("STREAK", currentStreak).apply();
+        if(currentStreak >= 5 && currentStreak % 5 == 0) {
+            incrementStarsAvailable();
+        }
     }
 
     boolean areSoundsOn() {
@@ -117,5 +120,12 @@ public class SavedData {
     @SuppressLint("ApplySharedPref")
     void decrementStarsAvailable() {
         prefs.edit().putInt("STARS", getStarsAvailable() - 1).commit();
+    }
+    @SuppressLint("ApplySharedPref")
+    void incrementStarsAvailable() {
+        if (getStarsAvailable() >= MAX_STARS) {
+            return;
+        }
+        prefs.edit().putInt("STARS", getStarsAvailable() + 1).commit();
     }
 }
