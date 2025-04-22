@@ -207,6 +207,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     private void showRestart(int status) {
+        if(status == LOSE) {
+            data.resetStreak();
+            data.resetStars();
+        }
         gridContainer.setBackgroundResource(status == WIN ? R.drawable.win_background : R.drawable.lose_background);
         int timeTaken = (int) TimeUnit.MILLISECONDS.toSeconds(new Date().getTime() - startTime);
         boolean createdRecord = false;
@@ -437,8 +441,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 data.decrementStarsAvailable();
                 invalidateOptionsMenu();
             } else {
-                data.resetStreak();
-                data.resetStars();
                 MainActivity.this.showRestart(LOSE);
             }
         }

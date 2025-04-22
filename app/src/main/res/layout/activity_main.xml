@@ -3,12 +3,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".MainActivity"
     android:orientation="vertical"
     android:background="@drawable/game_background"
     android:id="@+id/grid_container"
-    android:fitsSystemWindows="true"
-    >
+    android:fitsSystemWindows="true">
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:layout_width="match_parent"
@@ -18,6 +18,7 @@
         android:min="0"
         android:progress="10"
         android:layout_marginBottom="2dp"
+        app:indicatorColor="#5AA1E6"
         />
 
     <GridLayout
