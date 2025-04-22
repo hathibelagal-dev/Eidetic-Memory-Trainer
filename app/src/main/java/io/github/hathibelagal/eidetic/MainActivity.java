@@ -22,7 +22,9 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.media.ToneGenerator;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -30,12 +32,15 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.GridLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.material.progressindicator.LinearProgressIndicator;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -62,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private int expectedNumber = 1;
     private GridLayout grid;
     private View gridContainer;
+    private LinearProgressIndicator progressBar;
 
     private long startTime = 0;
 
@@ -70,6 +76,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private Speaker speaker;
 
     private String additionalSpeech;
+
+    private boolean paused = false;
+    private boolean finished = false;
+    private boolean timedOut = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -81,10 +91,39 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         data = new SavedData(this);
         grid = findViewById(R.id.grid);
         gridContainer = findViewById(R.id.grid_container);
+        progressBar = findViewById(R.id.progress_bar);
 
         speaker = new Speaker(this, data);
 
         resetGrid();
+
+        AsyncTask.execute(new Runnable() {
+            @Override
+            public void run() {
+                while (!finished) {
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if(paused || timedOut) {
+                                return;
+                            }
+                            if(progressBar.getProgress() > 0) {
+                                progressBar.setProgress(progressBar.getProgress() - 1);
+                            }
+                            if(progressBar.getProgress() == 0) {
+                                MainActivity.this.showRestart(LOSE);
+                                timedOut = true;
+                            }
+                        }
+                    });
+                }
+            }
+        });
     }
 
     private void resetGrid() {
@@ -98,10 +137,25 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         expectedNumber = 1;
         gameStarted = false;
         additionalSpeech = "";
+        progressBar.setProgress(60);
+        timedOut = false;
+        paused = false;
     }
 
     private void generateSequence() {
         Collections.shuffle(sequence);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        paused = true;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        paused = false;
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -153,11 +207,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
     private void showRestart(int status) {
-        gridContainer.setBackgroundResource(status == WIN ?
-                R.drawable.win_background : R.drawable.lose_background);
+        gridContainer.setBackgroundResource(status == WIN ? R.drawable.win_background : R.drawable.lose_background);
         int timeTaken = (int) TimeUnit.MILLISECONDS.toSeconds(new Date().getTime() - startTime);
         boolean createdRecord = false;
         int previousRecord = data.getFastestTime();
+        paused = true;
 
         // Inflate custom layout
         View dialogView = getLayoutInflater().inflate(R.layout.custom_dialog, null);
@@ -182,13 +236,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         data.updateStats(status == WIN);
 
-        titleView.setText(status == WIN ?
-                String.format(Locale.ENGLISH, "🤩 You win!\n🙌 Streak: %d", data.getStreak()) :
-                "😖 Game over!");
-        messageView.setText(status == WIN ?
-                String.format(Locale.ENGLISH, getString(createdRecord ? R.string.success_message_record :
-                        R.string.success_message), timeTaken, previousRecord) :
-                getString(R.string.game_over_message));
+        titleView.setText(status == WIN ? String.format(Locale.ENGLISH, "🤩 You win!\n🙌 Streak: %d", data.getStreak()) : "😖 Game over!");
+        messageView.setText(status == WIN ? String.format(Locale.ENGLISH, getString(createdRecord ? R.string.success_message_record : R.string.success_message), timeTaken, previousRecord) : getString(R.string.game_over_message));
 
         AlertDialog dialog = builder.create();
         Objects.requireNonNull(dialog.getWindow()).setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
@@ -206,9 +255,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if (!data.areSoundsOn()) {
                 neutralButton.setEnabled(false);
             }
-            neutralButton.setOnClickListener(v ->
-                    speaker.say(String.format(Locale.ENGLISH, getString(R.string.tts_time_taken), timeTaken) +
-                            ". " + additionalSpeech));
+            neutralButton.setOnClickListener(v -> speaker.say(String.format(Locale.ENGLISH, getString(R.string.tts_time_taken), timeTaken) + ". " + additionalSpeech));
         }
 
         dialog.show();
@@ -326,9 +373,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             return;
         }
         Float winRate = (float) (100.0 * nWins / nGames);
-        String statsText = String.format(Locale.ENGLISH,
-                "Total games played: %d\nNumber of wins: %d\nWin rate: %.2f %%",
-                nGames, nWins, winRate);
+        String statsText = String.format(Locale.ENGLISH, "Total games played: %d\nNumber of wins: %d\nWin rate: %.2f %%", nGames, nWins, winRate);
         messageView.setText(statsText);
 
         AlertDialog dialog = builder.create();
@@ -347,6 +392,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     @Override
     protected void onDestroy() {
+        finished = true;
         if (speaker != null) {
             speaker.releaseResources();
         }
@@ -398,4 +444,5 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
         return true;
     }
+
 }
