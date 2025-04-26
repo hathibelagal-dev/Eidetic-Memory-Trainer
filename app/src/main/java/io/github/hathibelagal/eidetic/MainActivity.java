@@ -19,6 +19,9 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.media.ToneGenerator;
@@ -95,22 +98,35 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     private void startProgressTimer() {
+        if (timer != null) {
+            timer.cancel();
+            timer = null;
+        }
         timer = new CountDownTimer(60000, 1000) {
             @Override
             public void onTick(long millisUntilFinished) {
                 long progress = millisUntilFinished / 1000;
                 progressBar.setProgress((int) progress);
-                if (progress <= 0) {
-                    showRestart(LOSE);
-                    cancel();
-                }
             }
 
             @Override
             public void onFinish() {
-                showRestart(LOSE);
+                progressBar.setProgress(0);
+                setGrayscale(findViewById(android.R.id.content));
             }
         }.start();
+    }
+
+    public void removeGrayscale(View view) {
+        view.setLayerType(View.LAYER_TYPE_NONE, null);
+    }
+
+    public void setGrayscale(View view) {
+        Paint paint = new Paint();
+        ColorMatrix colorMatrix = new ColorMatrix();
+        colorMatrix.setSaturation(0.5f);
+        paint.setColorFilter(new ColorMatrixColorFilter(colorMatrix));
+        view.setLayerType(View.LAYER_TYPE_HARDWARE, paint);
     }
 
     private void resetGrid() {
@@ -125,6 +141,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         gameStarted = false;
         additionalSpeech = "";
         progressBar.setProgress(60);
+        removeGrayscale(findViewById(android.R.id.content));
         startProgressTimer();
     }
 
